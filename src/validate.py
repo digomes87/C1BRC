@@ -1,4 +1,5 @@
-from typing import Dict, List
+import sys
+from typing import Dict, List, Optional
 
 
 class BaselineValidator:
@@ -62,3 +63,38 @@ class BaselineValidator:
             max_temp /= 10.0
             output.append(f"{station}={min_temp:.1f}/{mean_temp:.1f}/{max_temp:.1f}")
         return "{" + ", ".join(output) + "}"
+
+    def validate(self, expected_output: Optional[str] = None) -> bool:
+        """
+        Runs the calculation and compares with expected output if provided.
+        """
+
+        print("Running baseline validation...")
+        self.calculate()
+        baseline_output = self.format_results()
+
+        if expected_output:
+            if baseline_output == expected_output:
+                print("Validation PASSED!")
+                return True
+            else:
+                print("Validation FAILED!")
+                return False
+        else:
+            print("Baseline Result:")
+            print(baseline_output)
+            return True
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python validate.py <filename>")
+        sys.exit(1)
+
+    filename = sys.argv[1]
+    validator = BaselineValidator(filename)
+    validator.validate()
+
+
+if __name__ == "__main__":
+    main()
