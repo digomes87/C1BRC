@@ -10,7 +10,7 @@ class DataReader(ABC):
 
 class ChunkProcessor(ABC):
     @abstractmethod
-    def process(self, filename: str, strt: int, end: int) -> Dict[str, Any]:
+    def process(self, filename: str, start: int, end: int) -> Dict[str, Any]:
         pass
 
 
