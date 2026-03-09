@@ -32,10 +32,10 @@ class DatasetGenerator:
         buffer = []
 
         with open(filename, "w", encoding="utf-8") as f:
-            for _ in tqdm[int](range(num_rows), unit="rows"):
+            for _ in tqdm(range(num_rows), unit="rows"):
                 station, mean_temp = random.choice(self.stations)
                 temp = random.gauss(mean_temp, 10)
-                line = f"{station};{temp}:.1f"
+                line = f"{station};{temp:.1f}\n"
                 buffer.append(line)
 
                 if len(buffer) >= buffer_size:
