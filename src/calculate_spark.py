@@ -2,11 +2,11 @@ import argparse
 import time
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, format_number, max, mean, min
+from pyspark.sql.functions import max, mean, min
 
 
 def calculate(filename):
-    print(f"Starting Spark Session...")
+    print("Starting Spark Session...")
     spark = (
         SparkSession.builder.appName("1BRC")
         .config("spark.driver.memory", "4g")

@@ -1,11 +1,10 @@
 import argparse
-import mmap
 import os
 import time
 from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
-from numba import njit, prange
+from numba import njit
 
 NEWLINE = 10
 SEMICOLON = 59
@@ -33,6 +32,8 @@ def parse_chunk(data):
     stats[:, 1] = -9999
 
     station_lens = np.zeros(MAX_STATIONS, dtype=np.int32)
+
+    print(station_lens)
 
     next_idx = 0
 
@@ -80,6 +81,7 @@ def parse_chunk(data):
                 name_len = semi_pos - (
                     idx - (curr + 2) - (semi_pos - (idx - (curr + 2)))
                 )
+                print(f"Size name {name_len}")
                 break
             elif map_keys[slot] == np.int64(h):
                 break
