@@ -1,96 +1,117 @@
-# 1 Billion Row Challenge (1BRC) - Python Implementation
+# 1 Billion Row Challenge (1BRC) - Python Edition
 
-This project is a high-performance Python implementation of the [One Billion Row Challenge](https://github.com/gunnarmorling/1brc). The goal is to process a massive text file containing temperature measurements for various weather stations and calculate the minimum, mean, and maximum temperature for each station as fast as possible.
-
-## Features
-
--   **High Performance**: Utilizes `multiprocessing` for parallel execution and `mmap` for efficient file I/O.
--   **Data Generation**: Includes a tool to generate synthetic datasets of arbitrary sizes.
--   **Validation**: Comes with a baseline validator to ensure the correctness of the optimized implementation.
--   **Modular Architecture**: Clean separation of concerns using Domain-Driven Design (DDD) principles.
+This project is a Python implementation of the [1 Billion Row Challenge](https://github.com/gunnarmorling/1brc). The goal is to calculate the minimum, mean, and maximum temperature for weather stations from a file containing 1 billion rows of measurements.
 
 ## Prerequisites
 
--   Python 3.11 or higher
--   [`uv`](https://github.com/astral-sh/uv) (Recommended for fast package management) or `pip`
+- Python 3.11+
+- `uv` (recommended for dependency management) or `pip`
 
-## Installation
+## Setup
 
 1.  **Clone the repository**:
+
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/digomes87/C1BRC
     cd 1brc
     ```
 
-2.  **Set up the environment**:
-    We recommend using `uv` for a faster and more reliable setup.
+2.  **Install dependencies**:
+    Using `uv` (recommended):
 
     ```bash
-    # Create a virtual environment
-    uv venv .venv
-
-    # Activate the environment
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-    # Install dependencies
+    uv venv
+    source .venv/bin/activate
     uv pip install -r requirements.txt
+    ```
+
+    Or using standard `pip`:
+
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
     ```
 
 ## Usage
 
-### 1. Generate the Dataset
-Before running the challenge, you need to generate the measurements file. You can specify the number of rows (default is 1 billion).
+### 1. Generate Data
+
+You can generate a dataset with 1 billion rows (approx. 13GB).
+
+**Fast Generation (Recommended)**:
+Uses multiprocessing and NumPy for high performance (~1.8M rows/s).
 
 ```bash
-# Generate 1 billion rows (standard challenge)
+python src/generate_dataset_fast.py --rows 1000000000 --output measurements.txt
+```
+
+**Standard Generation**:
+Slower, pure Python implementation.
+
+```bash
 python src/generate_dataset.py --rows 1000000000 --output measurements.txt
-
-# Generate a smaller dataset for testing (e.g., 1 million rows)
-python src/generate_dataset.py --rows 1000000 --output measurements.txt
 ```
 
-**Arguments:**
--   `--rows`: Number of rows to generate (default: 1,000,000,000)
--   `--stations`: Number of unique weather stations (default: 10,000)
--   `--output`: Output filename (default: `measurements.txt`)
+### 2. Calculate Statistics
 
-### 2. Run the Calculation
-Execute the main processing script to calculate the statistics.
+There are multiple implementations available, optimized for different scenarios.
+
+#### A. Polars (Fastest Single Node)
+
+Uses the Polars DataFrame library for extremely fast multi-threaded processing.
 
 ```bash
-python src/calculate.py measurements.txt
+python src/calculate_polars.py measurements.txt
 ```
 
-If no filename is provided, it defaults to `measurements.txt`.
+#### B. DuckDB (High Performance SQL)
 
-### 3. Validate Results
-To verify the correctness of the optimized implementation, you can run the baseline validator. This is useful for checking smaller datasets.
+Uses DuckDB's embedded OLAP engine to query the CSV file directly.
 
 ```bash
-python src/validate.py measurements.txt
+python src/calculate_duckdb.py measurements.txt
 ```
+
+#### C. Numba (JIT Compiled)
+
+Uses Numba to JIT compile the parsing logic and release the GIL for parallel processing.
+
+```bash
+python src/calculate_numba.py measurements.txt
+```
+
+#### D. PySpark (Distributed)
+
+Uses Apache Spark for distributed processing. Ideal for clusters or extremely large datasets.
+
+```bash
+python src/calculate_spark.py measurements.txt
+```
+
+## Performance Benchmarks (1 Million Rows)
+
+| Implementation | Description               | Approximate Time  |
+| :------------- | :------------------------ | :---------------- |
+| **Polars**     | `src/calculate_polars.py` | ~0.02s            |
+| **DuckDB**     | `src/calculate_duckdb.py` | ~0.04s            |
+| **Numba**      | `src/calculate_numba.py`  | ~0.15s            |
+| **PySpark**    | `src/calculate_spark.py`  | ~4.00s (overhead) |
+
+_Note: For 1 billion rows, Polars and DuckDB are typically the fastest on a single machine._
 
 ## Project Structure
 
-```
-1brc/
-├── src/
-│   ├── application/        # Application logic and orchestration
-│   ├── domain/             # Domain models
-│   ├── infrastructure/     # Low-level implementation (File I/O, Processing)
-│   ├── interfaces/         # Protocols and Interfaces
-│   ├── calculate.py        # Main entry point for the challenge
-│   ├── generate_dataset.py # Dataset generation script
-│   └── validate.py         # Baseline validation script
-├── measurements.txt        # Generated data file (not committed)
-├── requirements.txt        # Project dependencies
-└── README.md               # Project documentation
-```
+- `src/generate_dataset_fast.py`: Optimized data generator.
+- `src/generate_dataset.py`: Original data generator.
+- `src/calculate_polars.py`: Solution using Polars.
+- `src/calculate_duckdb.py`: Solution using DuckDB.
+- `src/calculate_numba.py`: Solution using Numba JIT.
+- `src/calculate_spark.py`: Solution using PySpark.
+- `requirements.txt`: Project dependencies.
 
-## How It Works
+# My Conclusion
 
-1.  **Chunking**: The input file is split into chunks based on the number of available CPU cores.
-2.  **Memory Mapping**: Each worker process uses `mmap` to read its assigned chunk efficiently without loading the entire file into memory.
-3.  **Parallel Processing**: Workers parse lines and aggregate temperature data (min, max, sum, count) locally.
-4.  **Aggregation**: Partial results from all workers are merged into a final result set.
-5.  **Formatting**: The final statistics are formatted and printed to standard output.
+I am surprised by DuckDB, I didn't expect it to be the champion. There was a cheering for JIT (Numba), which performed well but was easily surpassed by DuckDB.
+
+In the end, it's not about the tool but the application scenario, understanding the business model. Understand that there is no better or worse, and you can even work with more than one resource in the same project.
